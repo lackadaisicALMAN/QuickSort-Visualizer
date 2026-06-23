@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickSort Neural Matrix — Cyberpunk Visualizer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; width: 100%; overflow: hidden; }
+  body {
+    background: #0a0b10;
+    font-family: 'Share Tech Mono', monospace;
+    color: #e2e8f0;
+  }
+  :root {
+    --pink: #ff007f;
+    --green: #00ff88;
+    --cyan: #00f0ff;
+    --gold: #ffd700;
+    --indigo: #6366f1;
+    --bg: #0a0b10;
+    --glass: rgba(255,255,255,0.04);
+  }
+  .orbitron { font-family: 'Orbitron', monospace; }
+
+  /* Grid background */
+  .grid-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(99,102,241,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99,102,241,0.045) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  /* Vignette */
+  .vignette {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%);
+  }
+
+  /* Glass panels */
+  .glass {
+    background: rgba(255,255,255,0.035);
+    border: 1px solid rgba(255,255,255,0.09);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .glass-strong {
+    background: rgba(10,11,16,0.72);
+    border: 1px solid rgba(99,102,241,0.28);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  /* Buttons */
+  .neon-btn {
+    border: 1px solid rgba(99,102,241,0.45);
+    background: rgba(99,102,241,0.07);
+    color: #a5b4fc;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.06em;
+    padding: 9px 16px;
+    border-radius: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    outline: none;
+    user-select: none;
+  }
+  .neon-btn:hover {
+    background: rgba(99,102,241,0.18);
+    border-color: #6366f1;
+    color: #e0e7ff;
+    box-shadow: 0 0 14px rgba(99,102,241,0.28);
+  }
+  .neon-btn:active { transform: scale(0.97); }
+  .neon-btn:disabled { opacity: 0.32; cursor: not-allowed; box-shadow: none; transform: none; }
+
+  .demo-btn {
+    border-color: rgba(0,240,255,0.45);
+    background: rgba(0,240,255,0.05);
+    color: #00f0ff;
+  }
+  .demo-btn:hover {
+    background: rgba(0,240,255,0.14);
+    border-color: #00f0ff;
+    color: #fff;
+    box-shadow: 0 0 16px rgba(0,240,255,0.28);
+  }
+  .stop-btn {
+    border-color: rgba(255,0,127,0.4);
+    background: rgba(255,0,127,0.06);
+    color: #ff6eb4;
+  }
+  .stop-btn:hover {
+    background: rgba(255,0,127,0.16);
+    border-color: #ff007f;
+    color: #ffb3d4;
+    box-shadow: 0 0 14px rgba(255,0,127,0.28);
+  }
+
+  /* Stats */
+  .stat-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .hud-label {
+    font-size: 8px;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  /* Sliders */
+  .slider-row { display: flex; align-items: center; gap: 10px; }
+  .slider-lbl { font-size: 9px; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; min-width: 52px; text-align: right; }
+  .slider-val { font-size: 10px; color: #a5b4fc; min-width: 44px; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    height: 3px; border-radius: 2px;
+    background: rgba(99,102,241,0.25);
+    outline: none; cursor: pointer; flex: 1;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 13px; height: 13px; border-radius: 50%;
+    background: #6366f1;
+    border: 1px solid #a5b4fc;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(99,102,241,0.6);
+    transition: box-shadow 0.2s;
+  }
+  input[type=range]:hover::-webkit-slider-thumb {
+    box-shadow: 0 0 14px rgba(99,102,241,0.9);
+  }
+
+  /* Bars */
+  #bars-container {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+    width: 100%;
+    height: 100%;
+    padding: 8px 10px 4px;
+  }
+  .bar-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+    transition: transform 0.12s cubic-bezier(0.4,0,0.2,1);
+  }
+  .bar {
+    border-radius: 5px 5px 2px 2px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    transition: height 0.16s cubic-bezier(0.4,0,0.2,1),
+                background 0.16s ease,
+                box-shadow 0.16s ease;
+  }
+  .bar::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 35%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.14), transparent);
+    border-radius: 5px 5px 0 0;
+    pointer-events: none;
+  }
+  .bar-val {
+    font-size: 8px;
+    color: rgba(255,255,255,0.38);
+    margin-top: 3px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  /* Animations */
+  .pulse-ring { animation: pulseRing 0.9s ease-out infinite; }
+  @keyframes pulseRing {
+    0%   { box-shadow: 0 0 0 0 rgba(255,0,127,0.7), 0 0 22px rgba(255,0,127,0.5); }
+    60%  { box-shadow: 0 0 0 7px rgba(255,0,127,0), 0 0 32px rgba(255,0,127,0.7); }
+    100% { box-shadow: 0 0 0 0 rgba(255,0,127,0),   0 0 22px rgba(255,0,127,0.4); }
+  }
+  .shimmer-anim { animation: shimmer 0.7s ease forwards; }
+  @keyframes shimmer {
+    0%   { filter: brightness(3.5) saturate(2.2); }
+    35%  { filter: brightness(2.2) saturate(1.8); }
+    100% { filter: brightness(1) saturate(1); }
+  }
+
+  /* Scan line on HUD */
+  .scan-line {
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent 0%, rgba(0,240,255,0.45) 50%, transparent 100%);
+    animation: scan 5s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes scan { 0% { top: 0; opacity: 0.9; } 100% { top: 100%; opacity: 0; } }
+
+  /* Status dot */
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 7px; flex-shrink: 0; }
+  .dot-idle    { background: #6366f1; box-shadow: 0 0 7px rgba(99,102,241,0.6); }
+  .dot-active  { background: #00ff88; box-shadow: 0 0 7px rgba(0,255,136,0.7); animation: blink 0.9s infinite; }
+  .dot-done    { background: #ffd700; box-shadow: 0 0 7px rgba(255,215,0,0.7); }
+  .dot-stop    { background: #ff6eb4; box-shadow: 0 0 7px rgba(255,110,180,0.6); }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+  /* Corner brackets */
+  .corner { position: absolute; width: 11px; height: 11px; border-color: rgba(0,240,255,0.38); }
+  .c-tl { top: 7px; left: 7px; border-top: 1px solid; border-left: 1px solid; }
+  .c-tr { top: 7px; right: 7px; border-top: 1px solid; border-right: 1px solid; }
+  .c-bl { bottom: 7px; left: 7px; border-bottom: 1px solid; border-left: 1px solid; }
+  .c-br { bottom: 7px; right: 7px; border-bottom: 1px solid; border-right: 1px solid; }
+
+  /* Ticker */
+  .ticker {
+    font-size: 11px;
+    color: rgba(0,240,255,0.82);
+    letter-spacing: 0.04em;
+    line-height: 1.55;
+    min-height: 34px;
+    transition: opacity 0.25s;
+  }
+
+  /* Particles */
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 30;
+    animation: particleFade 0.85s ease-out forwards;
+  }
+  @keyframes particleFade {
+    0%   { opacity: 1; transform: scale(1) translate(0,0); }
+    100% { opacity: 0; transform: scale(0) translate(var(--px,0px), var(--py,-24px)); }
+  }
+
+  /* Divider */
+  .v-divider { width: 1px; background: rgba(99,102,241,0.2); align-self: stretch; }
+
+  /* Layout */
+  #app {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column;
+    height: 100vh; padding: 10px; gap: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="vignette"></div>
+
+<div id="app">
+
+  <!-- ═══ TOP HUD ═══ -->
+  <div class="glass-strong" style="border-radius:8px;padding:10px 16px;position:relative;overflow:hidden;flex-shrink:0;">
+    <div class="scan-line"></div>
+    <div class="corner c-tl"></div><div class="corner c-tr"></div>
+    <div class="corner c-bl"></div><div class="corner c-br"></div>
+
+    <div style="display:flex;align-items:center;gap:0;flex-wrap:wrap;row-gap:8px;">
+      <!-- Brand -->
+      <div style="padding-right:18px;border-right:1px solid rgba(99,102,241,0.18);margin-right:18px;">
+        <div class="orbitron" style="font-size:14px;font-weight:900;color:#00f0ff;letter-spacing:0.14em;line-height:1;">
+          QUICK<span style="color:#ff007f">SORT</span>
+        </div>
+        <div style="font-size:7.5px;color:rgba(255,255,255,0.28);letter-spacing:0.18em;margin-top:3px;">by Salman</div>
+      </div>
+
+      <!-- Stats -->
+      <div style="display:flex;gap:20px;flex:1;flex-wrap:wrap;">
+        <div>
+          <div class="hud-label">STEPS</div>
+          <div class="stat-val" id="stat-steps" style="color:#818cf8;">0</div>
+        </div>
+        <div>
+          <div class="hud-label">SWAPS</div>
+          <div class="stat-val" id="stat-swaps" style="color:#ff007f;">0</div>
+        </div>
+        <div>
+          <div class="hud-label">COMPARISONS</div>
+          <div class="stat-val" id="stat-comps" style="color:#00ff88;">0</div>
+        </div>
+        <div>
+          <div class="hud-label">ARRAY SIZE</div>
+          <div class="stat-val" id="stat-size" style="color:#00f0ff;">0</div>
+        </div>
+        <div>
+          <div class="hud-label">RECURSION DEPTH</div>
+          <div class="stat-val" id="stat-depth" style="color:#ffd700;">0</div>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div style="display:flex;align-items:center;border-left:1px solid rgba(99,102,241,0.18);padding-left:16px;gap:0;flex-shrink:0;">
+        <span class="status-dot dot-idle" id="status-dot"></span>
+        <span id="status-text" style="font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:0.08em;">IDLE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VISUALIZER ═══ -->
+  <div class="glass" id="viz-area" style="flex:1;border-radius:8px;position:relative;overflow:hidden;min-height:0;">
+    <div class="corner c-tl"></div><div class="corner c-tr"></div>
+    <div class="corner c-bl"></div><div class="corner c-br"></div>
+    <div id="bars-container"></div>
+  </div>
+
+  <!-- ═══ TICKER ═══ -->
+  <div class="glass" style="border-radius:6px;padding:8px 14px;flex-shrink:0;">
+    <div style="font-size:7.5px;color:rgba(0,240,255,0.38);letter-spacing:0.18em;margin-bottom:4px;">▸ OPERATION LOG</div>
+    <div class="ticker" id="ticker">System initialized. Generate an array to begin the sort protocol.</div>
+  </div>
+
+  <!-- ═══ CONTROLS ═══ -->
+  <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;flex-shrink:0;">
+    <button class="neon-btn" id="btn-gen"  onclick="generateArray()">⟳ NEW ARRAY</button>
+    <button class="neon-btn" id="btn-sort" onclick="startSort()" disabled>▶ QUICKSORT</button>
+    <button class="neon-btn stop-btn" id="btn-stop" onclick="stopSort()" disabled>■ STOP</button>
+    <button class="neon-btn demo-btn" id="btn-demo" onclick="demoMode()">◈ DEMO MODE</button>
+
+    <div class="glass" style="border-radius:6px;padding:8px 14px;display:flex;flex-direction:column;gap:8px;flex:1;min-width:220px;">
+      <div class="slider-row">
+        <span class="slider-lbl">SPEED</span>
+        <input type="range" id="speed-slider" min="1" max="100" value="50" oninput="updateSpeed()">
+        <span class="slider-val" id="speed-label">50ms</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-lbl">SIZE</span>
+        <input type="range" id="size-slider"  min="8" max="60" value="30" oninput="updateSize()">
+        <span class="slider-val" id="size-label">30</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ─── Color definitions ──────────────────────────────── */
+const C = {
+  default: { a:'#6366f1', b:'#06b6d4', glow:'rgba(99,102,241,0.45)'  },
+  pivot:   { a:'#ff007f', b:'#a855f7', glow:'rgba(255,0,127,0.85)'   },
+  left:    { a:'#00ff88', b:'#059669', glow:'rgba(0,255,136,0.72)'   },
+  right:   { a:'#00f0ff', b:'#0891b2', glow:'rgba(0,240,255,0.72)'   },
+  sorted:  { a:'#ffd700', b:'#f59e0b', glow:'rgba(255,215,0,0.72)'   },
+  active:  { a:'#818cf8', b:'#38bdf8', glow:'rgba(129,140,248,0.4)'  },
+};
+const grad = t => `linear-gradient(to top,${C[t].a},${C[t].b})`;
+const glow = (t,px) => `0 0 ${px}px ${C[t].glow},inset 0 0 8px rgba(255,255,255,0.07)`;
+
+/* ─── State ──────────────────────────────────────────── */
+let arr=[], n=30, delay=50;
+let running=false, stopped=false;
+let steps=0, swaps=0, comps=0, maxDepth=0;
+let sortedSet=new Set();
+
+/* ─── DOM helpers ────────────────────────────────────── */
+const $  = id => document.getElementById(id);
+const setTicker = msg => {
+  const t=$('ticker');
+  t.style.opacity='0';
+  setTimeout(()=>{ t.textContent='▸ '+msg; t.style.opacity='1'; }, 160);
+};
+const setStatus = (label, dotClass) => {
+  $('status-text').textContent = label;
+  $('status-dot').className = 'status-dot ' + dotClass;
+};
+const updateStats = () => {
+  $('stat-steps').textContent = steps;
+  $('stat-swaps').textContent = swaps;
+  $('stat-comps').textContent = comps;
+  $('stat-depth').textContent = maxDepth;
+};
+
+/* ─── Render ─────────────────────────────────────────── */
+function renderBars(a, colorMap) {
+  const container = $('bars-container');
+  const vizH   = $('viz-area').clientHeight - 20;
+  const vizW   = $('viz-area').clientWidth  - 20;
+  const maxVal = Math.max(...a);
+  const barW   = Math.max(4, Math.min(36, Math.floor((vizW - (a.length-1)*3) / a.length)));
+  const showVal = barW >= 11;
+
+  container.innerHTML = '';
+  for (let i = 0; i < a.length; i++) {
+    const type = colorMap[i] || (sortedSet.has(i) ? 'sorted' : 'default');
+    const pct  = a[i] / maxVal;
+    const h    = Math.max(8, Math.floor(pct * (vizH - 30)));
+
+    const wrap = document.createElement('div');
+    wrap.className = 'bar-wrap';
+    wrap.id = 'bar-' + i;
+    wrap.style.cssText = `width:${barW}px;height:${vizH}px;`;
+
+    const bar = document.createElement('div');
+    bar.className = 'bar' + (type==='pivot' ? ' pulse-ring' : '') + (type==='sorted' ? ' shimmer-anim' : '');
+    bar.style.cssText = `height:${h}px;background:${grad(type)};box-shadow:${glow(type, type==='pivot'?22:10)};`;
+
+    const val = document.createElement('div');
+    val.className = 'bar-val';
+    val.textContent = showVal ? a[i] : '';
+
+    wrap.appendChild(bar);
+    wrap.appendChild(val);
+    container.appendChild(wrap);
+  }
+}
+
+/* ─── Particles ──────────────────────────────────────── */
+function spawnParticles(idx) {
+  const container = $('bars-container');
+  const barEl = $('bar-'+idx);
+  if (!barEl) return;
+  const br = barEl.getBoundingClientRect();
+  const cr = container.getBoundingClientRect();
+  for (let k = 0; k < 5; k++) {
+    const p = document.createElement('div');
+    const px = (Math.random()-0.5)*30;
+    const py = -(16+Math.random()*18);
+    const sz = 3+Math.random()*4;
+    p.className = 'particle';
+    p.style.cssText = `
+      width:${sz}px;height:${sz}px;
+      background:#ffd700;
+      box-shadow:0 0 6px #ffd700;
+      left:${br.left-cr.left+Math.random()*br.width}px;
+      top:${br.top-cr.top+16}px;
+      --px:${px}px;--py:${py}px;
+    `;
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 900);
+  }
+}
+
+/* ─── Async sleep (stoppable) ────────────────────────── */
+function sleep(ms) {
+  return new Promise(res => {
+    if (stopped) { res(); return; }
+    const id = setTimeout(() => { res(); }, ms);
+    // allow stop to resolve early
+    const check = setInterval(() => { if (stopped) { clearTimeout(id); clearInterval(check); res(); } }, 30);
+    setTimeout(() => clearInterval(check), ms + 50);
+  });
+}
+
+/* ─── QuickSort (Lomuto, randomized pivot) ───────────── */
+async function quicksort(a, lo, hi, depth) {
+  if (stopped || lo >= hi) {
+    if (!stopped && lo === hi && !sortedSet.has(lo)) {
+      sortedSet.add(lo);
+      spawnParticles(lo);
+      renderBars(a, { [lo]:'sorted' });
+      updateStats();
+    }
+    return;
+  }
+  if (stopped) return;
+
+  maxDepth = Math.max(maxDepth, depth);
+  steps++;
+  updateStats();
+
+  /* Choose random pivot */
+  const pivotIdx = lo + Math.floor(Math.random() * (hi - lo + 1));
+  const pivotVal = a[pivotIdx];
+  setTicker(`PARTITION [${lo}..${hi}] | Pivot selected → index ${pivotIdx}, value ${pivotVal} | Recursion depth: ${depth}`);
+  setStatus('PARTITIONING', 'dot-active');
+
+  const cm = { [pivotIdx]: 'pivot' };
+  for (let i = lo; i <= hi; i++) if (i !== pivotIdx) cm[i] = 'active';
+  renderBars(a, cm);
+  await sleep(delay * 1.6);
+  if (stopped) return;
+
+  /* Move pivot to end */
+  [a[pivotIdx], a[hi]] = [a[hi], a[pivotIdx]];
+  swaps++; steps++;
+  updateStats();
+
+  let store = lo;
+
+  for (let i = lo; i < hi; i++) {
+    if (stopped) return;
+    comps++; steps++;
+
+    const cm2 = { [hi]:'pivot', [i]:'left', [store]:'right' };
+    for (let x = lo; x < hi; x++) if (!cm2[x]) cm2[x] = 'active';
+    renderBars(a, cm2);
+    setTicker(
+      `Comparing index ${i} (val:${a[i]}) with pivot (val:${a[hi]}) ` +
+      `→ ${a[i] <= a[hi] ? `${a[i]} ≤ ${a[hi]}, advance store pointer` : `${a[i]} > ${a[hi]}, skip`}` +
+      ` | Store ptr: ${store}`
+    );
+    updateStats();
+    await sleep(delay);
+    if (stopped) return;
+
+    if (a[i] <= a[hi]) {
+      if (i !== store) {
+        [a[i], a[store]] = [a[store], a[i]];
+        swaps++; steps++;
+        setTicker(`SWAP: index ${i} (val:${a[store]}) ↔ index ${store} (val:${a[i]}) | Left partition grows to [${lo}..${store}]`);
+        renderBars(a, { [hi]:'pivot', [i]:'right', [store]:'left' });
+        updateStats();
+        await sleep(delay);
+        if (stopped) return;
+      }
+      store++;
+    }
+  }
+
+  /* Place pivot in its final sorted position */
+  [a[store], a[hi]] = [a[hi], a[store]];
+  swaps++; steps++;
+  sortedSet.add(store);
+  spawnParticles(store);
+
+  setTicker(
+    `✦ PIVOT FINALIZED: value ${a[store]} permanently placed at index ${store}` +
+    ` | Left sub-array: [${lo}..${store-1}] | Right sub-array: [${store+1}..${hi}]`
+  );
+
+  const cmFinal = { [store]:'sorted' };
+  for (let i = lo;      i < store; i++) cmFinal[i] = 'left';
+  for (let i = store+1; i <= hi;   i++) cmFinal[i] = 'right';
+  renderBars(a, cmFinal);
+  updateStats();
+  await sleep(delay * 2.2);
+  if (stopped) return;
+
+  /* Recurse */
+  await quicksort(a, lo, store-1, depth+1);
+  await quicksort(a, store+1, hi, depth+1);
+
+  /* Mark entire range sorted after both sub-calls complete at root */
+  if (!stopped && depth === 0) {
+    for (let i = 0; i < a.length; i++) sortedSet.add(i);
+    const fcm = {};
+    for (let i = 0; i < a.length; i++) fcm[i] = 'sorted';
+    renderBars(a, fcm);
+    setStatus('COMPLETE', 'dot-done');
+    setTicker(
+      `✦ SORT COMPLETE — All ${a.length} elements finalized in ascending order` +
+      ` | ${steps} total steps | ${swaps} swaps | ${comps} comparisons | Max depth: ${maxDepth}`
+    );
+    updateStats();
+    running = false;
+    $('btn-sort').disabled = false;
+    $('btn-stop').disabled = true;
+    $('btn-gen').disabled  = false;
+    $('btn-demo').disabled = false;
+  }
+}
+
+/* ─── Controls ───────────────────────────────────────── */
+function generateArray() {
+  if (running) return;
+  n   = parseInt($('size-slider').value);
+  arr = Array.from({ length:n }, () => Math.floor(Math.random()*95)+5);
+  steps=0; swaps=0; comps=0; sortedSet=new Set(); maxDepth=0;
+  updateStats();
+  $('stat-size').textContent = n;
+  $('btn-sort').disabled = false;
+  $('btn-stop').disabled = true;
+  setStatus('READY', 'dot-idle');
+  setTicker(`Array generated: ${n} elements loaded into the sort matrix. Pivot selection is randomized (Lomuto scheme).`);
+  renderBars(arr, {});
+}
+
+async function startSort() {
+  if (running || arr.length === 0) return;
+  running=true; stopped=false;
+  steps=0; swaps=0; comps=0; sortedSet=new Set(); maxDepth=0;
+  updateStats();
+  $('btn-sort').disabled = true;
+  $('btn-gen').disabled  = true;
+  $('btn-demo').disabled = true;
+  $('btn-stop').disabled = false;
+  setStatus('SORTING', 'dot-active');
+  setTicker('Initiating QuickSort protocol — Lomuto partition scheme with randomized pivot selection.');
+  const a = [...arr];
+  await quicksort(a, 0, a.length-1, 0);
+  if (!stopped) arr = a;
+  running = false;
+}
+
+function stopSort() {
+  stopped=true; running=false;
+  $('btn-sort').disabled = false;
+  $('btn-gen').disabled  = false;
+  $('btn-demo').disabled = false;
+  $('btn-stop').disabled = true;
+  setStatus('STOPPED', 'dot-stop');
+  setTicker('Sort protocol interrupted. Generate a new array to restart the sequence.');
+}
+
+function demoMode() {
+  if (running) return;
+  // 35 elements @ 42ms ≈ 25-28 seconds total
+  $('size-slider').value  = 35; $('size-label').textContent  = '35';
+  $('speed-slider').value = 60; $('speed-label').textContent = '42ms';
+  delay = 42; n = 35;
+  arr = Array.from({ length:n }, () => Math.floor(Math.random()*95)+5);
+  steps=0; swaps=0; comps=0; sortedSet=new Set(); maxDepth=0;
+  updateStats();
+  $('stat-size').textContent = n;
+  $('btn-sort').disabled = false;
+  renderBars(arr, {});
+  setStatus('DEMO', 'dot-active');
+  setTicker('DEMO MODE — 35-element array loaded. Optimized for 25-30s screen recording. Starting in 1.2s…');
+  setTimeout(() => { if (!running) startSort(); }, 1200);
+}
+
+function updateSpeed() {
+  const v = parseInt($('speed-slider').value);
+  delay = Math.round(200 - v * 1.9);
+  $('speed-label').textContent = delay + 'ms';
+}
+
+function updateSize() {
+  $('size-label').textContent = $('size-slider').value;
+}
+
+/* ─── Init ───────────────────────────────────────────── */
+$('speed-label').textContent = '50ms';
+$('size-label').textContent  = '30';
+generateArray();
+window.addEventListener('resize', () => { if (!running) renderBars(arr, {}); });
+</script>
+</body>
+</html>
