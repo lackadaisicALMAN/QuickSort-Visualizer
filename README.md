@@ -43,8 +43,3 @@ Quick Sort is a Divide-and-Conquer algorithm. It picks an element as a pivot and
   While Quick Sort sorts "in-place" (requiring $\mathcal{O}(1)$ auxiliary space for swapping elements), the recursive function calls require stack space. In the average/best case, the recursive call stack depth is $\mathcal{O}(\log n)$.
 
 ---
-
-## 🛠️ Tech Stack
-* **Frontend:** Vanilla JavaScript (ES6+ Asynchronous Promises for silky-smooth 60fps animations)
-* **Styling:** Tailwind CSS CDN (Glassmorphic HUD controls, custom neon drop-shadows)
-* **Structure:** Single-file `index.html` architecture for instant deployment.
