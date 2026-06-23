@@ -13,7 +13,6 @@ Designed with a sleek, dark sci-fi dashboard theme, this visualizer moves away f
 ## 👤 Student Information
 * **Name:** Salman
 * **Roll Number:** BSAI24067
-* 
 ---
 
 ## 🎨 Visual States & Color Legend
